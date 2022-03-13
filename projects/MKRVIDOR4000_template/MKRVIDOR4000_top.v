@@ -20,7 +20,7 @@
 
 module MKRVIDOR4000_top
 (
-  // system signals
+  // system signals 
   input         iCLK,
   input         iRESETn,
   input         iSAM_INT,
@@ -168,5 +168,73 @@ begin
   rRESETCNT<=rRESETCNT+1;
   end
 end
+
+assign bMKR_AREF = iWM_TX;
+assign oWM_RX = bMKR_A[0];
+assign oWM_RESET = bMKR_A[1];
+assign bWM_PIO27 = bMKR_A[2];
+
+integer counter = 0;
+
+//reg [3:0]vals;
+//assign bWM_PIO1 = vals[0];
+//assign bWM_PIO2 = vals[1];
+//assign bWM_PIO3 = vals[2];
+//assign bWM_PIO4 = vals[3];
+//
+//always @(posedge iCLK)
+//begin
+//	counter <= counter +1;
+//	if(counter==48_000_00)begin
+//		vals <= vals+1;
+//		counter<=0;
+//	end
+//end
+//
+//assign bMKR_D[0] = vals[0];
+//assign bMKR_D[1] = vals[1];
+//assign bMKR_D[2] = vals[2];
+//assign bMKR_D[3] = vals[3];
+
+//assign {iSpiMOSI,iSpiClk,iSpiCS} = {bWM_PIO1,bWM_PIO29,bWM_PIO28};
+////assign {bMKR_D[8],bMKR_D[9],bMKR_D[7]} = {bWM_PIO1,bWM_PIO29,bWM_PIO28};
+//
+//assign bWM_PIO21 = oSpiMISO;
+
+assign bMKR_A[3] = dout_valid;
+assign bMKR_A[4] = bWM_PIO29;
+assign bMKR_A[5] = bWM_PIO28;
+assign bMKR_A[6] = bWM_PIO21;
+
+wire di_req;
+reg wren;
+reg [31:0] di;
+wire wr_ack, dout_valid;
+wire [31:0] dout;
+reg dout_valid_prev;
+
+always @(posedge wCLK120)
+begin
+	wren<=0;
+	dout_valid_prev <= dout_valid;
+	if(dout_valid && !dout_valid_prev)begin
+		wren<=1;
+		di <= di+1;
+	end
+end
+
+spi_slave #(32) spi(
+	.clk_i(wCLK120),
+	.spi_ssel_i(bWM_PIO28),
+   .spi_sck_i(bWM_PIO29),
+   .spi_mosi_i(bWM_PIO1),
+   .spi_miso_o (bWM_PIO21),
+	.di_req_o(di_req),
+   .di_i(di),
+   .wren_i(wren),
+   .wr_ack_o(wr_ack),
+   .do_valid_o(dout_valid),
+   .do_o(dout)
+);
 
 endmodule
